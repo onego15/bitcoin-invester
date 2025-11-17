@@ -57,8 +57,9 @@ class BitcoinAPIClient:
             ohlc_data = self._get_ohlc_data(days)
 
             if ohlc_data is not None:
-                # OHLCデータをマージ
-                df = df.merge(ohlc_data, on="date", how="left")
+                # OHLCデータをマージ（closeカラムはohlc_dataのものを使用）
+                # volumeとdateだけを残してマージ
+                df = df[["date", "volume"]].merge(ohlc_data, on="date", how="left")
             else:
                 # OHLCデータが取得できない場合は終値から推定
                 df["open"] = df["close"].shift(1).fillna(df["close"])
