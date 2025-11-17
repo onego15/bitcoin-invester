@@ -43,6 +43,18 @@ class ChartDisplay:
             if col not in df.columns:
                 raise ValueError(f"DataFrameに'{col}'カラムが必要です")
 
+        # データが空でないかチェック
+        if len(df) == 0:
+            raise ValueError("DataFrameが空です")
+
+        # NaN値をチェック（OHLC列）
+        for col in ["Open", "High", "Low", "Close"]:
+            if df[col].isna().all():
+                raise ValueError(f"{col}カラムが全てNaNです")
+
+        # NaN値を含む行を削除（OHLCに関して）
+        df = df.dropna(subset=["Open", "High", "Low", "Close"])
+
         # 保存先パスの設定
         if save_path is None:
             save_path = os.path.join(self.output_dir, "bitcoin_chart.png")
@@ -52,11 +64,12 @@ class ChartDisplay:
         df["MA7"] = df["Close"].rolling(window=7).mean()
         df["MA25"] = df["Close"].rolling(window=25).mean()
 
-        # 移動平均線の設定
-        ma_lines = [
-            mpf.make_addplot(df["MA7"], color="blue", width=1.5, label="MA7"),
-            mpf.make_addplot(df["MA25"], color="red", width=1.5, label="MA25")
-        ]
+        # 移動平均線の設定（NaN値を持つデータもmplfinanceが処理できるように）
+        ma_lines = []
+        if not df["MA7"].isna().all():  # 全てNaNでない場合のみ追加
+            ma_lines.append(mpf.make_addplot(df["MA7"], color="blue", width=1.5, label="MA7"))
+        if not df["MA25"].isna().all():  # 全てNaNでない場合のみ追加
+            ma_lines.append(mpf.make_addplot(df["MA25"], color="red", width=1.5, label="MA25"))
 
         # チャートスタイルの設定
         mc = mpf.make_marketcolors(
@@ -74,23 +87,34 @@ class ChartDisplay:
         )
 
         # チャートの描画
-        fig, axes = mpf.plot(
-            df,
-            type="candle",         # ローソク足
-            style=style,
-            volume=True,           # 出来高を表示
-            addplot=ma_lines,      # 移動平均線を追加
-            title=title,
-            ylabel="Price (USD)",
-            ylabel_lower="Volume",
-            figsize=(14, 8),
-            returnfig=True,
-            datetime_format="%Y-%m-%d",
-            xrotation=15
-        )
+        plot_kwargs = {
+            "type": "candle",         # ローソク足
+            "style": style,
+            "volume": True,           # 出来高を表示
+            "title": title,
+            "ylabel": "Price (USD)",
+            "ylabel_lower": "Volume",
+            "figsize": (14, 8),
+            "returnfig": True,
+            "datetime_format": "%Y-%m-%d",
+            "xrotation": 15
+        }
 
-        # 凡例を追加
-        axes[0].legend(["MA7", "MA25"], loc="upper left")
+        # 移動平均線がある場合のみ追加
+        if ma_lines:
+            plot_kwargs["addplot"] = ma_lines
+
+        fig, axes = mpf.plot(df, **plot_kwargs)
+
+        # 凡例を追加（移動平均線がある場合のみ）
+        if ma_lines:
+            legend_labels = []
+            if not df["MA7"].isna().all():
+                legend_labels.append("MA7")
+            if not df["MA25"].isna().all():
+                legend_labels.append("MA25")
+            if legend_labels:
+                axes[0].legend(legend_labels, loc="upper left")
 
         # 保存
         fig.savefig(save_path, dpi=150, bbox_inches="tight")
