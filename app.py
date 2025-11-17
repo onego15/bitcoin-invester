@@ -8,8 +8,12 @@ import streamlit as st
 import os
 import sys
 from datetime import datetime
+from dotenv import load_dotenv
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+
+# 環境変数を読み込み
+load_dotenv()
 
 # srcディレクトリをパスに追加
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
@@ -168,12 +172,6 @@ def main():
         analyze_days = st.slider("分析期間（日）", min_value=7, max_value=90, value=30, step=1)
         enable_ai = st.checkbox("AI分析を実行", value=False)
 
-        if enable_ai and not use_demo:
-            api_key = st.text_input("OpenAI API Key", type="password",
-                                    value=os.getenv("OPENAI_API_KEY", ""))
-            api_base = st.text_input("API Base URL (オプション)",
-                                     value=os.getenv("OPENAI_API_BASE", ""))
-
         st.divider()
 
         # 実行ボタン
@@ -248,48 +246,53 @@ def main():
 
                 if use_demo:
                     st.warning("⚠️ デモモードではAI分析は利用できません")
-                elif not api_key:
-                    st.error("⚠️ OpenAI API Keyを設定してください")
                 else:
-                    with st.spinner('AI分析を実行中...'):
-                        # 環境変数を一時的に設定
-                        os.environ['OPENAI_API_KEY'] = api_key
-                        if api_base:
-                            os.environ['OPENAI_API_BASE'] = api_base
+                    # 環境変数からAPIキーを取得
+                    api_key = os.getenv("OPENAI_API_KEY")
 
-                        analyzer = ChartAnalyzer()
-                        result = analyzer.analyze(df_clean, days=analyze_days)
-
-                        # 推奨アクションに応じたスタイル
-                        recommendation = result['recommendation']
-                        if recommendation == '買い':
-                            style_class = 'recommendation-buy'
-                            icon = '📈'
-                        elif recommendation == '売り':
-                            style_class = 'recommendation-sell'
-                            icon = '📉'
-                        else:
-                            style_class = 'recommendation-hold'
-                            icon = '⏸️'
-
-                        # 推奨アクションを表示
-                        st.markdown(f"""
-                        <div class="{style_class}">
-                            <h3>{icon} 推奨アクション: {recommendation}</h3>
-                            <p><strong>確信度:</strong> {result['confidence']}</p>
-                        </div>
-                        """, unsafe_allow_html=True)
-
-                        # 詳細な分析結果
-                        st.markdown("### 詳細分析")
-                        st.markdown(result['reasoning'])
-
-                        # 免責事項
-                        st.warning("""
-                        **⚠️ 免責事項**
-                        この分析結果はあくまで参考情報です。投資判断は自己責任で行ってください。
-                        暗号資産投資には高いリスクが伴います。
+                    if not api_key:
+                        st.error("⚠️ OPENAI_API_KEYが設定されていません")
+                        st.info("""
+                        **設定方法:**
+                        1. `.env`ファイルを作成
+                        2. `OPENAI_API_KEY=your-api-key` を記載
+                        3. アプリを再起動してください
                         """)
+                    else:
+                        with st.spinner('AI分析を実行中...'):
+                            analyzer = ChartAnalyzer()
+                            result = analyzer.analyze(df_clean, days=analyze_days)
+
+                            # 推奨アクションに応じたスタイル
+                            recommendation = result['recommendation']
+                            if recommendation == '買い':
+                                style_class = 'recommendation-buy'
+                                icon = '📈'
+                            elif recommendation == '売り':
+                                style_class = 'recommendation-sell'
+                                icon = '📉'
+                            else:
+                                style_class = 'recommendation-hold'
+                                icon = '⏸️'
+
+                            # 推奨アクションを表示
+                            st.markdown(f"""
+                            <div class="{style_class}">
+                                <h3>{icon} 推奨アクション: {recommendation}</h3>
+                                <p><strong>確信度:</strong> {result['confidence']}</p>
+                            </div>
+                            """, unsafe_allow_html=True)
+
+                            # 詳細な分析結果
+                            st.markdown("### 詳細分析")
+                            st.markdown(result['reasoning'])
+
+                            # 免責事項
+                            st.warning("""
+                            **⚠️ 免責事項**
+                            この分析結果はあくまで参考情報です。投資判断は自己責任で行ってください。
+                            暗号資産投資には高いリスクが伴います。
+                            """)
 
         except Exception as e:
             st.error(f"❌ エラーが発生しました: {str(e)}")
@@ -311,8 +314,7 @@ def main():
 
             2. **AI分析を有効にする（オプション）**
                - 「AI分析を実行」にチェック
-               - OpenAI API Keyを入力
-               - 社内プロキシを使用する場合はAPI Base URLも入力
+               - 事前に`.env`ファイルにOpenAI API Keyを設定してください
 
             3. **「分析実行」ボタンをクリック**
                - ビットコインのチャートが表示されます
