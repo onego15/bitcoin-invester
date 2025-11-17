@@ -129,11 +129,12 @@ def main():
         if not args.chart_only:
             print(f"\n[4/4] AI分析を実行中... (分析期間: {args.analyze_days}日)")
 
-            # ANTHROPIC_API_KEYの確認
-            if not os.getenv("ANTHROPIC_API_KEY"):
-                print("\n⚠ エラー: ANTHROPIC_API_KEYが設定されていません")
-                print("環境変数にANTHROPIC_API_KEYを設定するか、.envファイルに記載してください")
-                print("\n例: export ANTHROPIC_API_KEY='your-api-key'")
+            # OPENAI_API_KEYの確認
+            if not os.getenv("OPENAI_API_KEY"):
+                print("\n⚠ エラー: OPENAI_API_KEYが設定されていません")
+                print("環境変数にOPENAI_API_KEYを設定するか、.envファイルに記載してください")
+                print("\n例: export OPENAI_API_KEY='ok-your-api-key'")
+                print("社内プロキシを使用する場合は、OPENAI_API_BASEも設定してください")
                 sys.exit(1)
 
             analyzer = ChartAnalyzer()

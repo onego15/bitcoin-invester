@@ -3,26 +3,59 @@
 import os
 from typing import Dict, Optional
 import pandas as pd
-from anthropic import Anthropic
+from openai import OpenAI
 
 
 class ChartAnalyzer:
     """AIを使用してビットコインチャートを分析するクラス"""
 
-    def __init__(self, api_key: Optional[str] = None, rules_path: str = "rules/analysis_rules.md"):
+    def __init__(
+        self,
+        api_key: Optional[str] = None,
+        rules_path: str = "rules/analysis_rules.md",
+        model: str = "gpt-4o",
+        api_base: Optional[str] = None,
+        user_id: Optional[str] = None,
+        app_title: Optional[str] = None
+    ):
         """
         Args:
-            api_key: Anthropic APIキー（Noneの場合は環境変数から取得）
+            api_key: OpenAI APIキー（Noneの場合は環境変数OPENAI_API_KEYから取得）
             rules_path: 分析ルールのMarkdownファイルパス
+            model: 使用するモデル（デフォルト: gpt-4o）
+            api_base: APIベースURL（Noneの場合は環境変数OPENAI_API_BASEから取得）
+            user_id: ユーザーID（プロキシ用、環境変数OPENAI_USER_IDから取得可能）
+            app_title: アプリケーション識別子（プロキシ用、環境変数OPENAI_APP_TITLEから取得可能）
         """
-        self.api_key = api_key or os.getenv("ANTHROPIC_API_KEY")
+        self.api_key = api_key or os.getenv("OPENAI_API_KEY")
         if not self.api_key:
             raise ValueError(
-                "ANTHROPIC_API_KEYが設定されていません。"
+                "OPENAI_API_KEYが設定されていません。"
                 "環境変数に設定するか、コンストラクタで指定してください。"
             )
 
-        self.client = Anthropic(api_key=self.api_key)
+        self.model = model
+        self.api_base = api_base or os.getenv("OPENAI_API_BASE")
+        self.user_id = user_id or os.getenv("OPENAI_USER_ID")
+        self.app_title = app_title or os.getenv("OPENAI_APP_TITLE", "BitcoinInvester")
+
+        # OpenAIクライアントの初期化
+        client_kwargs = {"api_key": self.api_key}
+
+        if self.api_base:
+            client_kwargs["base_url"] = self.api_base
+
+        self.client = OpenAI(**client_kwargs)
+
+        # カスタムヘッダーの設定（プロキシ用）
+        if self.user_id or self.app_title:
+            default_headers = {}
+            if self.user_id:
+                default_headers["X-User-Id"] = self.user_id
+            if self.app_title:
+                default_headers["X-Title"] = self.app_title
+            self.client.default_headers.update(default_headers)
+
         self.rules_path = rules_path
         self.analysis_rules = self._load_rules()
 
@@ -160,16 +193,18 @@ class ChartAnalyzer:
 明確で簡潔な回答をお願いします。"""
 
         try:
-            # Claude APIを呼び出し
-            message = self.client.messages.create(
-                model="claude-sonnet-4-20250514",
-                max_tokens=2000,
+            # OpenAI APIを呼び出し
+            response = self.client.chat.completions.create(
+                model=self.model,
                 messages=[
+                    {"role": "system", "content": "あなたはビットコインのチャート分析の専門家です。"},
                     {"role": "user", "content": prompt}
-                ]
+                ],
+                max_tokens=2000,
+                temperature=0.7
             )
 
-            analysis_result = message.content[0].text
+            analysis_result = response.choices[0].message.content
 
             # 結果をパース
             recommendation = "様子見"  # デフォルト

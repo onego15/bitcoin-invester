@@ -4,7 +4,7 @@ AIエージェントを使用したビットコインチャート分析ツール
 
 ## 概要
 
-BitcoinInvesterは、ビットコインのチャートを分析し、AIエージェント（Claude）が買い・売り・様子見の判断を提供するプロトタイプツールです。
+BitcoinInvesterは、ビットコインのチャートを分析し、AIエージェント（OpenAI GPT-4o）が買い・売り・様子見の判断を提供するプロトタイプツールです。
 
 ### 主な機能
 
@@ -13,6 +13,7 @@ BitcoinInvesterは、ビットコインのチャートを分析し、AIエージ
 - **移動平均線**: 7日・25日移動平均線を自動計算して表示
 - **AI分析エージェント**: Markdownで定義したルールに基づいてAIがチャートを分析
 - **売買判断**: 買い・売り・様子見の推奨アクションと理由を提供
+- **社内プロキシ対応**: カスタムヘッダー（X-User-Id、X-Title）をサポート
 
 ## セットアップ
 
@@ -31,7 +32,7 @@ pip install -r requirements.txt
 
 ### 3. 環境変数の設定
 
-`.env.example`をコピーして`.env`ファイルを作成し、Anthropic API Keyを設定してください。
+`.env.example`をコピーして`.env`ファイルを作成し、OpenAI API設定を行ってください。
 
 ```bash
 cp .env.example .env
@@ -39,11 +40,27 @@ cp .env.example .env
 
 `.env`ファイルを編集：
 
+#### 標準のOpenAI APIを使用する場合
+
 ```bash
-ANTHROPIC_API_KEY=your-actual-api-key
+OPENAI_API_KEY=sk-your-api-key
 ```
 
-Anthropic API Keyは[Anthropic Console](https://console.anthropic.com/)で取得できます。
+#### 社内プロキシを使用する場合
+
+```bash
+# APIキー（プロキシから取得）
+OPENAI_API_KEY=ok-your-api-key
+
+# プロキシのベースURL
+OPENAI_API_BASE=https://openai-proxy-apigw-genai.api.linecorp.com/v1
+
+# 社員ID（オプション）
+OPENAI_USER_ID=your-employee-id
+
+# アプリケーション識別子（オプション）
+OPENAI_APP_TITLE=BitcoinInvester
+```
 
 ## 使用方法
 
@@ -126,7 +143,7 @@ AIはこのMarkdownファイルを読み込んで、記載されたルールに�
 ## 技術スタック
 
 - **Python 3.7+**
-- **Anthropic Claude API**: AI分析エージェント
+- **OpenAI API (GPT-4o)**: AI分析エージェント
 - **CoinGecko API**: ビットコイン価格データ取得（無料）
 - **mplfinance**: ローソク足チャート表示
 - **pandas**: データ処理
@@ -146,7 +163,7 @@ AIはこのMarkdownファイルを読み込んで、記載されたルールに�
 ### APIレート制限
 
 - CoinGecko API: 無料プランでは1分間に10-50リクエストの制限があります
-- Anthropic API: 使用量に応じて課金されます
+- OpenAI API: 使用量に応じて課金されます（プランによって異なります）
 
 ## 開発・カスタマイズ
 
