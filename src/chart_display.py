@@ -138,6 +138,12 @@ class ChartDisplay:
         Returns:
             str: サマリー文字列
         """
+        # NaN値を含む行を削除（コピーを作成）
+        df = df.dropna(subset=["Open", "High", "Low", "Close"]).copy()
+
+        if len(df) == 0:
+            return "データが不足しています"
+
         latest = df.iloc[-1]
         previous = df.iloc[-2] if len(df) > 1 else latest
 
