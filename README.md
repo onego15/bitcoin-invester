@@ -14,6 +14,7 @@ BitcoinInvesterは、ビットコインのチャートを分析し、AIエージ
 - **AI分析エージェント**: Markdownで定義したルールに基づいてAIがチャートを分析
 - **売買判断**: 買い・売り・様子見の推奨アクションと理由を提供
 - **社内プロキシ対応**: カスタムヘッダー（X-User-Id、X-Title）をサポート
+- **WebUI対応**: StreamlitによるインタラクティブなWebインターフェース
 
 ## セットアップ
 
@@ -64,7 +65,23 @@ OPENAI_APP_TITLE=BitcoinInvester
 
 ## 使用方法
 
-### 基本的な使い方
+### WebUI（推奨）
+
+ブラウザで使える簡単なインターフェースです。
+
+```bash
+streamlit run app.py
+```
+
+ブラウザが自動的に開き、以下の機能が利用できます：
+- インタラクティブなチャート表示
+- リアルタイムでパラメータを調整
+- AI分析結果の即時表示
+- デモモードでの動作確認
+
+### CLI（コマンドライン）
+
+従来のコマンドライン版も引き続き利用できます。
 
 ```bash
 python src/main.py
@@ -116,15 +133,16 @@ bitcoin-invester/
 ├── requirements.txt             # Python依存関係
 ├── .env.example                 # 環境変数のサンプル
 ├── .gitignore                   # Git除外設定
+├── app.py                       # Streamlit WebUI
 ├── rules/
 │   └── analysis_rules.md        # チャート分析ルール（カスタマイズ可能）
 ├── src/
 │   ├── __init__.py
 │   ├── api_client.py            # ビットコインデータ取得
-│   ├── chart_display.py         # チャート表示
+│   ├── chart_display.py         # チャート表示（CLI用）
 │   ├── chart_analyzer.py        # AI分析エージェント
-│   └── main.py                  # メインアプリケーション
-└── charts/                      # 生成されたチャート画像
+│   └── main.py                  # CLIアプリケーション
+└── charts/                      # 生成されたチャート画像（CLI使用時）
 ```
 
 ## 分析ルールのカスタマイズ
@@ -145,7 +163,9 @@ AIはこのMarkdownファイルを読み込んで、記載されたルールに�
 - **Python 3.7+**
 - **OpenAI API (GPT-4o)**: AI分析エージェント
 - **CoinGecko API**: ビットコイン価格データ取得（無料）
-- **mplfinance**: ローソク足チャート表示
+- **Streamlit**: WebUIフレームワーク
+- **Plotly**: インタラクティブなチャート表示
+- **mplfinance**: ローソク足チャート表示（CLI用）
 - **pandas**: データ処理
 - **requests**: HTTP通信
 
